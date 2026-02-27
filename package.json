@@ -1,0 +1,48 @@
+{
+  "name": "opencode-spec-swarm-coder-plugin",
+  "version": "0.1.0",
+  "description": "OpenCode plugin and skill workflow for multirun clarification, spec-kit artifacts, and swarm implementation",
+  "type": "module",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc --noEmit -p tsconfig.json",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@opencode-ai/plugin": "^1.2.15"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "typescript": "^5.9.2"
+  },
+  "keywords": [
+    "opencode",
+    "plugin",
+    "agent",
+    "spec-kit",
+    "swarm"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Joshua-Zhang-Jiaquan/spec-swarm-coder-skill.git"
+  },
+  "author": "",
+  "bugs": {
+    "url": "https://github.com/Joshua-Zhang-Jiaquan/spec-swarm-coder-skill/issues"
+  },
+  "homepage": "https://github.com/Joshua-Zhang-Jiaquan/spec-swarm-coder-skill#readme"
+}
