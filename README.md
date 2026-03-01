@@ -1,4 +1,9 @@
-# Spec Swarm Coder (OpenCode Skill + Plugin)
+# Spec Swarm Coder
+
+[![OpenCode Plugin](https://img.shields.io/badge/OpenCode-Plugin-4f46e5)](https://opencode.ai)
+[![Workflow](https://img.shields.io/badge/Workflow-Clarify%20%E2%86%92%20Spec%20%E2%86%92%20Swarm-0ea5e9)](#workflow-at-a-glance)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/badge/License-MIT-10b981)](LICENSE)
 
 Spec Swarm Coder is a version-control-aware OpenCode workflow that combines:
 
@@ -8,29 +13,70 @@ Spec Swarm Coder is a version-control-aware OpenCode workflow that combines:
 
 This repository ships both a reusable skill and a publishable OpenCode plugin.
 
-## What You Get
-
-- Skill definition: `.opencode/skills/spec-swarm-coder/SKILL.md`
-- Plugin source: `src/index.ts`
-- Local plugin bridge: `.opencode/plugins/spec-swarm-coder-plugin.ts`
-- Local plugin deps manifest: `.opencode/package.json`
-- npm package metadata: `package.json`
-- OpenCode config example: `opencode.json.example`
-
 Published package name:
 
 - `opencode-spec-swarm-coder-plugin`
 
-## Core Behavior
+## Table of Contents
+
+- [What You Get](#what-you-get)
+- [Workflow at a Glance](#workflow-at-a-glance)
+- [Hard-Stop Clarification Gate](#hard-stop-clarification-gate)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Plugin Tool Reference](#plugin-tool-reference)
+- [Guardrail Behavior](#guardrail-behavior)
+- [End-to-End Example](#end-to-end-example)
+- [Repository Layout](#repository-layout)
+- [Build, Pack, Publish](#build-pack-publish)
+- [Version-Control Guidance](#version-control-guidance)
+- [Troubleshooting](#troubleshooting)
+- [Security](#security)
+- [License](#license)
+
+## What You Get
+
+| Item | Path | Purpose |
+| --- | --- | --- |
+| Skill definition | `.opencode/skills/spec-swarm-coder/SKILL.md` | Full clarify-spec-implement workflow |
+| Classifier rule | `.opencode/rules/multirun-classifier.md` | Enforces classifier-first behavior |
+| Plugin source | `src/index.ts` | Tooling and command guardrails |
+| Local plugin bridge | `.opencode/plugins/spec-swarm-coder-plugin.ts` | Local runtime export bridge |
+| Local plugin deps | `.opencode/package.json` | Plugin-side dependency manifest |
+| Package metadata | `package.json` | npm package info and scripts |
+| OpenCode config example | `opencode.json.example` | Drop-in config starter |
+
+## Workflow at a Glance
 
 The workflow is designed as a strict pipeline:
 
-1. Clarify goals and constraints before implementation.
-2. Produce spec artifacts (`spec.md`, `plan.md`, `tasks.md`) before coding.
+1. Clarify goals and constraints immediately for every non-trivial task.
+2. Generate spec artifacts (`spec.md`, `plan.md`, `tasks.md`) before coding.
 3. Implement via swarm tracks with non-overlapping ownership.
-4. Enforce verification and version-control checkpoints.
+4. Enforce diagnostics/tests/build checks before completion.
 
-The plugin reinforces this by:
+## Hard-Stop Clarification Gate
+
+> [!IMPORTANT]
+> During clarification, each turn must end immediately after one focused `Next Question`.
+> No tool calls, todos, implementation, or extra sections are allowed in that turn.
+
+Clarification UI format:
+
+```text
+Task Brief
+- Goal: ...
+- Constraints: ...
+- Method: ...
+- Success Criteria: ...
+- Assumptions: ...
+
+Next Question
+- <one focused question>
+```
+
+The plugin reinforces this workflow by:
 
 - exposing a `spec_swarm_status` tool, and
 - blocking `/speckit.implement` when required artifacts are not ready.
@@ -40,9 +86,9 @@ The plugin reinforces this by:
 - OpenCode with plugin support
 - Access to `/speckit.*` commands or equivalent local spec-kit templates
 - Git for branch and change tracking
-- Node.js + npm (required for building/publishing this package)
+- Node.js + npm (required for building/publishing)
 
-## Installation Modes
+## Installation
 
 ### Recommended: npm plugin + local skill
 
@@ -53,6 +99,9 @@ The plugin reinforces this by:
   "$schema": "https://opencode.ai/config.json",
   "plugin": [
     "opencode-spec-swarm-coder-plugin"
+  ],
+  "instructions": [
+    ".opencode/rules/multirun-classifier.md"
   ]
 }
 ```
@@ -61,11 +110,11 @@ The plugin reinforces this by:
 
 - `.opencode/skills/spec-swarm-coder/SKILL.md`
 
-3. Restart OpenCode (or reload session) so plugin hooks and skill discovery refresh.
+3. Restart OpenCode (or reload the session) so hooks and discovery refresh.
 
-### Local development mode (from this repository)
+### Local development mode (this repository)
 
-Use this when iterating on plugin code before publishing.
+Use this mode while iterating on plugin code before publishing.
 
 1. Install dependencies:
 
@@ -80,7 +129,7 @@ npm run check
 npm run build
 ```
 
-3. Ensure local OpenCode plugin bridge exists:
+3. Ensure the local plugin bridge exists:
 
 - `.opencode/plugins/spec-swarm-coder-plugin.ts`
 
@@ -88,34 +137,32 @@ That bridge re-exports from `src/index.ts` for local runtime loading.
 
 ### Skill-only mode
 
-If you only want process guidance (without enforcement hooks), install:
+If you only need workflow guidance (without plugin guardrails), install:
 
 - `.opencode/skills/spec-swarm-coder/SKILL.md`
 
-You still get the full phase guidance, but you do not get plugin guardrails/tooling.
-
-## Quick Start (Day-1 Usage)
+## Quick Start
 
 1. Load the skill:
 
 `skill(name="spec-swarm-coder")`
 
-2. Run spec pipeline:
+2. Run the spec pipeline:
 
 - `/speckit.specify`
 - `/speckit.plan`
 - `/speckit.tasks`
 
-3. Check readiness (plugin tool):
+3. Check readiness using the plugin tool:
 
-- Use `spec_swarm_status` with no args to scan all `specs/*` feature dirs.
-- Use `spec_swarm_status` with `featureDir` for a specific feature.
+- `spec_swarm_status` with no args scans all `specs/*` feature dirs.
+- `spec_swarm_status` with `featureDir` checks one feature directory.
 
-4. Implement:
+4. Implement only when ready:
 
-- Run `/speckit.implement` only after readiness returns `ready: true`.
+- run `/speckit.implement` only after readiness returns `ready: true`.
 
-5. Verify:
+5. Verify outcomes:
 
 - run diagnostics/tests/build and map changes back to `tasks.md` task IDs.
 
@@ -125,8 +172,8 @@ You still get the full phase guidance, but you do not get plugin guardrails/tool
 
 Purpose:
 
-- validates presence of required artifacts (`spec.md`, `plan.md`, `tasks.md`)
-- reports implementation readiness and next action
+- validates required artifacts (`spec.md`, `plan.md`, `tasks.md`)
+- reports implementation readiness and the next step
 
 Arguments:
 
@@ -141,7 +188,7 @@ Result shape:
 
 - `ready`: boolean
 - `report` or `files`: per-artifact status
-- `next`: actionable next step string
+- `next`: actionable next step
 
 ## Guardrail Behavior
 
@@ -152,7 +199,7 @@ It blocks implementation when either condition is true:
 - no `specs/*` feature directory exists
 - no feature directory has all required artifacts
 
-Blocking messages explicitly instruct users to complete:
+Blocking guidance explicitly points users to:
 
 - `/speckit.specify`
 - `/speckit.plan`
@@ -166,7 +213,7 @@ Example request:
 
 Recommended flow:
 
-1. Use skill clarification phase to finalize scope, NFRs, and acceptance criteria.
+1. Finalize scope, constraints, and acceptance criteria through clarification.
 2. Generate artifacts with `/speckit.specify -> /speckit.plan -> /speckit.tasks`.
 3. Run `spec_swarm_status` until `ready: true`.
 4. Start `/speckit.implement` and execute swarm tracks by file ownership.
@@ -180,6 +227,8 @@ spec-swarm-coder-skill/
     package.json
     plugins/
       spec-swarm-coder-plugin.ts
+    rules/
+      multirun-classifier.md
     skills/
       spec-swarm-coder/
         SKILL.md
@@ -214,10 +263,10 @@ Notes:
 ## Troubleshooting
 
 - Plugin not loading:
-  - confirm `opencode.json` has `plugin` entry for `opencode-spec-swarm-coder-plugin`
-  - restart OpenCode session
+  - confirm `opencode.json` includes `opencode-spec-swarm-coder-plugin`
+  - restart the OpenCode session
 - `skill(name="spec-swarm-coder")` not found:
-  - verify skill file is at `.opencode/skills/spec-swarm-coder/SKILL.md`
+  - verify the skill path `.opencode/skills/spec-swarm-coder/SKILL.md`
 - `/speckit.implement` blocked:
   - run `spec_swarm_status` and create missing `spec.md`, `plan.md`, `tasks.md`
 - No `specs/*` found:
