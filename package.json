@@ -1,6 +1,6 @@
 {
   "name": "opencode-spec-swarm-coder-plugin",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "OpenCode plugin and skill workflow for multirun clarification, spec-kit artifacts, and swarm implementation",
   "type": "module",
   "license": "MIT",

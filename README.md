@@ -76,6 +76,15 @@ Next Question
 - <one focused question>
 ```
 
+Runtime tool contract for clarification:
+
+- Hard-stop turn: do not call tools.
+- After user reply: use `question` only (compact TUI prompts).
+- Tool names are case-sensitive `snake_case`.
+- Never use pseudo/invalid names like `AskUserQuestion` or `StartSession`.
+- Never use session/web clarification tools (`start_session`, `pick_one`, `pick_many`, `get_next_answer`).
+- Do not output XML-style pseudo tool tags like `<tool_call>...</tool_call>`.
+
 The plugin reinforces this workflow by:
 
 - exposing a `spec_swarm_status` tool, and

@@ -92,18 +92,38 @@ Output artifact from Phase 1:
 
 ### Conversation UX Contract
 
-Use a compact card-based UX for faster decision loops:
+Use a compact TUI-only UX for faster decision loops:
 
-- Let users switch between active questions in the same round.
-- Support single-select and multi-select options.
+- Keep clarification in terminal (TUI) prompts.
+- Use `question` with one or more items in the `questions` array.
+- Support single-select and multi-select options per question mode.
 - Always allow a custom typed answer in addition to provided options.
 - Allow skip/defer per question.
+
+Terminal keyboard contract:
+
+- `Tab` / `Shift+Tab`: move focus to next/previous question.
+- Arrow keys: move option focus inside the active question.
+- `Space`: select/toggle current option (radio for single-select, checkbox for multi-select).
+- `Enter`: if selected option has a sub-menu, enter sub-menu; otherwise open comment input for that selected option.
 
 Skip/defer behavior:
 
 - Re-evaluate deferred questions using answers from the same round.
 - Re-ask in the next round only if still needed.
 - If re-asked, place deferred questions first in the next round.
+
+Question tool mapping (runtime-safe):
+
+- Hard-stop turn: output only the `Task Brief` and `Next Question`; do not call tools.
+- Clarification turns after user reply:
+  - Use `question` only for compact prompts (set `multiple: false` for single-select, `multiple: true` for multi-select).
+- Tool names are case-sensitive and must be `snake_case` (`question`, not `Question`).
+- Do not invent tool names; never call `AskUserQuestion`, `StartSession`, `PickOne`, or `PickMany`.
+- Never call session/web clarification tools: `start_session`, `pick_one`, `pick_many`, `get_next_answer`.
+- Never emit XML-style pseudo tool calls in assistant text (for example `<tool_call>...</tool_call>`).
+- For `question`, pass `questions` as an array object (not a JSON string).
+- Never call `todowrite` during clarification.
 
 ### Exit Criteria
 

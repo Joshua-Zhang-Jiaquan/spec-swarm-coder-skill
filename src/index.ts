@@ -5,6 +5,35 @@ import { isAbsolute, join } from "node:path";
 
 const REQUIRED_ARTIFACTS = ["spec.md", "plan.md", "tasks.md"] as const;
 
+const CLARIFICATION_TOOL_NOTICE =
+  "Clarification tool contract: use real tool invocations only; never emit <tool_call> XML tags or pseudo tool names. Clarification is TUI-only: use question with questions as an array object (not a JSON string). Tool names are case-sensitive snake_case. Never call start_session, pick_one, pick_many, get_next_answer, AskUserQuestion, StartSession, PickOne, or PickMany.";
+
+function parseMaybeJson(value: unknown): unknown {
+  if (typeof value !== "string") {
+    return value;
+  }
+  const text = value.trim();
+  if (!text) {
+    return value;
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    return value;
+  }
+}
+
+function normalizeQuestions(value: unknown): unknown[] | null {
+  const parsed = parseMaybeJson(value);
+  if (Array.isArray(parsed)) {
+    return parsed;
+  }
+  if (parsed && typeof parsed === "object") {
+    return [parsed];
+  }
+  return null;
+}
+
 async function exists(path: string): Promise<boolean> {
   try {
     await access(path);
@@ -50,6 +79,54 @@ export const SpecSwarmCoderPlugin: Plugin = async ({ client, worktree }) => {
   });
 
   return {
+    "experimental.chat.system.transform": async (_input, output) => {
+      output.system.push(CLARIFICATION_TOOL_NOTICE);
+    },
+
+    "tool.execute.before": async (input, output) => {
+      const args =
+        output.args && typeof output.args === "object"
+          ? (output.args as Record<string, unknown>)
+          : null;
+      if (!args) {
+        return;
+      }
+
+      if (input.tool === "question") {
+        const normalized = normalizeQuestions(args.questions);
+        if (normalized) {
+          args.questions = normalized;
+        } else if (
+          typeof args.question === "string" &&
+          typeof args.header === "string" &&
+          Array.isArray(parseMaybeJson(args.options))
+        ) {
+          args.questions = [
+            {
+              question: args.question,
+              header: args.header,
+              options: parseMaybeJson(args.options),
+              multiple: Boolean(args.multiple),
+            },
+          ];
+        }
+
+        output.args = args;
+        return;
+      }
+
+      if (
+        input.tool === "start_session" ||
+        input.tool === "pick_one" ||
+        input.tool === "pick_many" ||
+        input.tool === "get_next_answer"
+      ) {
+        throw new Error(
+          "Clarification is TUI-only in this workflow. Use question with a questions array.",
+        );
+      }
+    },
+
     tool: {
       spec_swarm_status: tool({
         description:
