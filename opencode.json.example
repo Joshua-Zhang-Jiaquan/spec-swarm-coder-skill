@@ -2,5 +2,16 @@
   "$schema": "https://opencode.ai/config.json",
   "plugin": [
     "opencode-spec-swarm-coder-plugin"
-  ]
+  ],
+  "instructions": [
+    ".opencode/rules/multirun-classifier.md"
+  ],
+  "agent": {
+    "Sisyphus (Ultraworker)": {
+      "prompt": "Classifier-first runtime gate: for every new non-trivial task, before any todo, tool call, search, or planning output, respond with exactly: Task Brief (Goal, Constraints, Method, Success Criteria, Assumptions) and Next Question (one focused question). After Next Question, stop and wait for user reply. Skip only trivial one-step tasks."
+    },
+    "Hephaestus (Deep Agent)": {
+      "prompt": "Classifier-first runtime gate: for every new non-trivial task, before any todo, tool call, search, or planning output, respond with exactly: Task Brief (Goal, Constraints, Method, Success Criteria, Assumptions) and Next Question (one focused question). After Next Question, stop and wait for user reply. Skip only trivial one-step tasks."
+    }
+  }
 }
